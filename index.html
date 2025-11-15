@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Clicker</title>
+    <!-- Load Tailwind CSS for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+
+    <!-- 
+    **************************************************
+    AD SCRIPT: PLACEHOLDER 
+    **************************************************
+    -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234931983414274"
+     crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            /* CRITICAL FIX: Disable double-tap zoom globally */
+            touch-action: manipulation;
+        }
+        .money-button {
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+            user-select: none; /* Prevent text selection */
+            /* CRITICAL FIX: Ensure button itself doesn't zoom */
+            touch-action: manipulation;
+        }
+        .money-button:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 15px 30px rgba(74, 222, 128, 0.5); /* Green shadow */
+            filter: brightness(1.1);
+        }
+        .money-button:active {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3);
+        }
+        /* Custom modal for the policy - makes it scrollable */
+        .policy-modal-content {
+            max-height: 90vh; 
+            overflow-y: auto;
+        }
+        /* CRITICAL: Ensure the modal is fixed and takes up the whole screen when visible */
+        .fixed-full {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            background-color: white; /* Make the background explicit */
+            padding: 1rem;
+        }
+        /* FAIL-SAFE FIX: Use a custom class with !important to ensure hiding works */
+        .is-hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4">
+
+    <!-- ********************************************** -->
+    <!-- GAME CONTAINER: Everything inside here will hide when the Policy is open -->
+    <!-- ********************************************** -->
+    <div id="game-container" class="min-h-screen flex flex-col items-center justify-between p-4 w-full">
+        <!-- Top Left Status Panel -->
+        <div class="fixed top-4 left-4 flex flex-col space-y-2 z-10">
+            <!-- Money Display Card -->
+            <div class="bg-white p-4 rounded-xl shadow-xl border-b-4 border-green-500 w-full max-w-xs">
+                <p class="text-sm text-gray-600 font-medium">Your Daily Money:</p>
+                <div class="flex items-center space-x-2 mt-1">
+                    <!-- Dollar/Money Icon (SVG) -->
+                    <svg class="w-8 h-8 text-green-500 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm1-9.948v1.948h-2v-1.948C9.92 10.237 9 11.233 9 12c0 2 3 3 3 3s3-1 3-3c0-.767-.92-1.763-2-2.948z"/>
+                    </svg>
+                    <span id="money-display" class="text-4xl font-extrabold text-gray-900 transition-transform duration-100 ease-out">0</span>
+                </div>
+                <p id="reset-info" class="text-xs text-red-600 mt-2 font-semibold hidden">
+                    Daily reset performed!
+                </p>
+            </div>
+            
+            <!-- Shop Button -->
+            <button onclick="toggleShop(true)"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-colors duration-150 flex items-center justify-center">
+                <!-- Cart Icon (SVG) -->
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Open Shop
+            </button>
+
+            <!-- Policy Button (Styled like Shop Button) -->
+            <button onclick="togglePolicy(true)"
+                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-colors duration-150 flex items-center justify-center">
+                <!-- Document Icon (SVG) -->
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Privacy Policy
+            </button>
+        </div>
+
+        <!-- Main Clicker Area -->
+        <main class="flex flex-col items-center text-center max-w-lg w-full mt-24">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4">Money Clicker</h1>
+            <p id="power-display" class="text-lg text-gray-700 mb-8 font-semibold">Click Power: +1 Money</p>
+
+            <!-- Money Button -->
+            <button id="click-button" onclick="addMoney(event)"
+                class="money-button w-56 h-56 sm:w-72 sm:h-72 bg-green-500 hover:bg-green-400 text-white font-black text-5xl rounded-3xl flex flex-col items-center justify-center 
+                    shadow-2xl shadow-green-400 border-b-8 border-green-700">
+                <span class="text-sm font-light -mb-2">Earn</span>
+                <span class="text-6xl font-extrabold">MONEY</span>
+            </button>
+            
+            <!-- AD SLOT: Added below the button -->
+            <div class="mt-8 w-full max-w-lg bg-gray-100 rounded-lg p-3 text-center border border-gray-300">
+                <p class="text-xs text-gray-500 mb-2">Advertisement</p>
+                <!-- 
+                This AdSense unit uses placeholder IDs. 
+                Replace data-ad-client and data-ad-slot with your valid IDs when deploying.
+                -->
+                <ins class="adsbygoogle"
+                    style="display:block"
+                    data-ad-client="ca-pub-1234931983414274"
+                    data-ad-slot="1234567890" 
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+
+            <!-- Workers Display -->
+            <p id="workers-display" class="mt-8 text-xl text-yellow-700 font-bold">Automated Workers: 0 (+0/s)</p>
+        </main>
+
+        <!-- SHOP MODAL UI (Hidden by default, hidden by game-container when policy is up) -->
+        <div id="shop-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100">
+                <!-- Modal Header -->
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-3xl font-bold text-gray-800">The Upgrade Shop</h2>
+                    <!-- Close Button (The Cross) -->
+                    <button onclick="toggleShop(false)" class="text-gray-400 hover:text-gray-700 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Modal Body: Shop Items -->
+                <div class="p-6 space-y-4">
+                    
+                    <!-- Upgrade Item 1: +1 Money Per Click -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-semibold text-gray-800">Click Multiplier</span>
+                            <span id="upgrade-current-power" class="text-sm text-blue-600 font-medium">Current: +1 Money per click</span>
+                        </div>
+                        
+                        <button id="buy-upgrade-btn" data-upgrade-type="click" onclick="buyUpgrade('click')" disabled
+                            class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
+                            <span id="upgrade-cost">Cost: 25 Money</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Upgrade Item 2: Automated Worker -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-semibold text-gray-800">Automated Worker</span>
+                            <span id="worker-current-count" class="text-sm text-yellow-600 font-medium">Produces 1 money per second.</span>
+                        </div>
+                        
+                        <button id="buy-worker-btn" data-upgrade-type="worker" onclick="buyUpgrade('worker')" disabled
+                            class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
+                            <span id="worker-cost">Cost: 250 Money</span>
+                        </button>
+                    </div>
+
+                    <p id="shop-message" class="text-center text-sm text-red-500 hidden font-medium">Not enough money!</p>
+                </div>
+
+                <!-- Footer: Current Money in Shop -->
+                <div class="p-4 bg-gray-100 rounded-b-2xl text-center">
+                    <p class="text-md font-medium text-gray-700">Your Money: <span id="shop-money-display" class="font-extrabold text-green-600">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ********************************************** -->
+    <!-- END GAME CONTAINER -->
+    <!-- ********************************************** -->
+
+
+    <!-- PRIVACY POLICY MODAL (Stays outside game-container) -->
+    <!-- CRITICAL FIX: is-hidden class added here to prevent instant pop-up on page load. -->
+    <div id="policy-modal" class="fixed-full is-hidden"> 
+        <div class="policy-modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h2 class="text-2xl font-bold text-gray-800">Privacy Policy</h2>
+                <!-- Close Button (The Cross) -->
+                <button onclick="togglePolicy(false)" class="text-gray-400 hover:text-gray-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Policy Content -->
+            <div class="p-6 text-gray-700 text-sm space-y-4">
+                <h3 class="text-xl font-bold">1. Data Collection and Storage</h3>
+                <p>The App does not collect or store any personal information on a server or external database. All game progress and settings are saved locally within your device's web browser using **Local Storage**.</p>
+                <ul class="list-disc list-inside space-y-1 pl-4">
+                    <li>**Information Saved Locally:** Your current money count, click power level, worker count, upgrade costs, and the date of your last session reset are stored in your browser's Local Storage for the purpose of saving your game progress.</li>
+                    <li>**Data Deletion:** This local data can be manually cleared by the user at any time through their browser's settings.</li>
+                </ul>
+
+                <h3 class="text-xl font-bold pt-4">2. Third-Party Advertising (AdSense)</h3>
+                <p>The App uses **Google AdSense** to serve advertisements.</p>
+                <p>Google AdSense uses cookies and/or web beacons to collect data (non-personally identifiable information) about your visits to this and other websites in order to provide advertisements about goods and services that may be of interest to you.</p>
+                <p>The AdSense program uses the **DART cookie** to enable it and its partners to serve ads based on your visit to this App and/or other sites on the Internet.</p>
+
+                <h3 class="text-xl font-bold pt-4">3. Contact Us</h3>
+                <p>If you have any questions about this Privacy Policy, you can reach the developer via email at: **alexanderlai129@gmail.com**</p>
+            </div>
+
+            <div class="p-4 bg-gray-100 rounded-b-2xl"></div>
+        </div>
+    </div>
+
+
+    <!-- GLOBAL FOOTER (Simplified) -->
+    <footer class="mt-auto w-full max-w-lg text-center p-4">
+        <p class="text-xs text-gray-400 mt-1">© 2025 Money Clicker</p>
+    </footer>
+
+    <script>
+        // --- Game State Variables ---
+        let money = 0;
+        let clickPower = 1;
+        let upgradeCost = 25;
+        let workers = 0;
+        let workerCost = 250;
+        
+        // --- Local Storage Keys ---
+        const MONEY_KEY = 'dailyClickerMoney';
+        const DATE_KEY = 'dailyClickerDate';
+        const POWER_KEY = 'dailyClickerPower';
+        const COST_KEY = 'dailyClickerCost';
+        const WORKERS_KEY = 'dailyClickerWorkers';
+        const WORKER_COST_KEY = 'dailyClickerWorkerCost';
+
+        // --- DOM Element References ---
+        let moneyDisplay, powerDisplay, resetInfo, shopModal, shopMoneyDisplay, upgradeCurrentPower, upgradeCostEl, buyUpgradeBtn, shopMessage,
+            workersDisplay, workerCurrentCount, workerCostEl, buyWorkerBtn, policyModal, gameContainer;
+
+        /**
+         * Initializes all DOM references.
+         */
+        function initializeDomReferences() {
+            moneyDisplay = document.getElementById('money-display');
+            powerDisplay = document.getElementById('power-display');
+            resetInfo = document.getElementById('reset-info');
+            shopModal = document.getElementById('shop-modal');
+            shopMoneyDisplay = document.getElementById('shop-money-display');
+            upgradeCurrentPower = document.getElementById('upgrade-current-power');
+            upgradeCostEl = document.getElementById('upgrade-cost');
+            buyUpgradeBtn = document.getElementById('buy-upgrade-btn');
+            shopMessage = document.getElementById('shop-message');
+            
+            workersDisplay = document.getElementById('workers-display');
+            workerCurrentCount = document.getElementById('worker-current-count');
+            workerCostEl = document.getElementById('worker-cost');
+            buyWorkerBtn = document.getElementById('buy-worker-btn');
+            policyModal = document.getElementById('policy-modal');
+            gameContainer = document.getElementById('game-container');
+
+            // NOTE: The policy modal is now hidden via HTML class="is-hidden". 
+            // We no longer need to rely on JS to hide it on first load.
+        }
+        
+        // Run initialization immediately to find elements and register event listeners
+        initializeDomReferences();
+
+        // Expose functions globally for HTML buttons
+        window.addMoney = addMoney;
+        window.toggleShop = toggleShop;
+        window.buyUpgrade = buyUpgrade;
+        window.togglePolicy = togglePolicy;
+
+
+        // --- Core Logic Functions ---
+
+        /**
+         * Toggles the visibility of the Privacy Policy modal and the game content.
+         * @param {boolean} show - True to show the policy, false to hide it.
+         */
+        function togglePolicy(show) {
+            if (!policyModal || !gameContainer) return;
+
+            if (show) {
+                // HIDE the main game content (using Tailwind class)
+                gameContainer.classList.add('hidden'); 
+                // Show the policy modal (removing fail-safe class)
+                policyModal.classList.remove('is-hidden');
+                // Ensure shop is hidden if policy is opened
+                shopModal.classList.add('hidden');
+            } else {
+                // Hide the policy modal (adding fail-safe class)
+                policyModal.classList.add('is-hidden');
+                // SHOW the main game content again (removing Tailwind class)
+                gameContainer.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Checks the last saved date against today's date (YYYY-MM-DD) and resets all state if needed.
+         */
+        function checkAndResetDaily() {
+            const today = new Date().toISOString().split('T')[0];
+            const savedDate = localStorage.getItem(DATE_KEY);
+
+            if (savedDate !== today) {
+                // RESET ALL VALUES
+                money = 0;
+                clickPower = 1; 
+                upgradeCost = 25; 
+                workers = 0;
+                workerCost = 250; 
+                
+                // Save new daily start state
+                localStorage.setItem(DATE_KEY, today);
+                localStorage.setItem(MONEY_KEY, money);
+                localStorage.setItem(POWER_KEY, clickPower);
+                localStorage.setItem(COST_KEY, upgradeCost);
+                localStorage.setItem(WORKERS_KEY, workers);
+                localStorage.setItem(WORKER_COST_KEY, workerCost);
+                
+                // Show reset message
+                resetInfo.classList.remove('hidden');
+            } else {
+                // LOAD ALL VALUES from local storage (if same day)
+                money = parseInt(localStorage.getItem(MONEY_KEY) || 0, 10);
+                clickPower = parseInt(localStorage.getItem(POWER_KEY) || 1, 10);
+                upgradeCost = parseInt(localStorage.getItem(COST_KEY) || 25, 10);
+                workers = parseInt(localStorage.getItem(WORKERS_KEY) || 0, 10);
+                workerCost = parseInt(localStorage.getItem(WORKER_COST_KEY) || 250, 10);
+            }
+            
+            // Initial UI update and start auto-clicker
+            updateDisplay();
+            startAutoClicker();
+        }
+
+        /**
+         * Updates all money, power, and worker displays across the UI.
+         */
+        function updateDisplay() {
+            moneyDisplay.textContent = money.toLocaleString();
+            powerDisplay.textContent = `Click Power: +${clickPower} Money`;
+            workersDisplay.textContent = `Automated Workers: ${workers} (+${workers}/s)`;
+            
+            // Update shop UI as well
+            updateShopUI();
+        }
+
+        /**
+         * Updates the shop modal's content and button states.
+         */
+        function updateShopUI() {
+  
